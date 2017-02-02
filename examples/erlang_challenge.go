@@ -40,6 +40,7 @@ func main() {
 		}
 		averageInterval = averageInterval / counter
 		fmt.Printf("%v\n", averageInterval)
+		waitGroup.Done()
 	}
 
 	sponsor := tart.Minimal(nil)
@@ -65,7 +66,6 @@ func main() {
 				}
 				fmt.Printf(".")
 				constructionEndTime = endTime
-				waitGroup.Done()
 				reportProcessTimes()
 			}
 			return nil
