@@ -1,27 +1,27 @@
 package main
 
 import (
-    "errors"
-    "fmt"
-    "sync"
-    tart "github.com/tristanls/gotart"
+	"errors"
+	"fmt"
+	tart "github.com/tristanls/gotart"
+	"sync"
 )
 
 func main() {
-    var waitGroup sync.WaitGroup
-    failHandler := func(err error) {
-        fmt.Printf("%v boom!\n", err)
-        waitGroup.Done()
-    }
-    sponsor := tart.Minimal(&tart.Options{Fail: failHandler})
+	var waitGroup sync.WaitGroup
+	failHandler := func(err error) {
+		fmt.Printf("%v boom!\n", err)
+		waitGroup.Done()
+	}
+	sponsor := tart.Minimal(&tart.Options{Fail: failHandler})
 
-    failing := sponsor(func(context *tart.Context, message tart.Message) error {
-        return errors.New("boom!")
-    })
+	failing := sponsor(func(context *tart.Context, message tart.Message) error {
+		return errors.New("boom!")
+	})
 
-    waitGroup.Add(1)
+	waitGroup.Add(1)
 
-    failing([]interface{}{"go"})
+	failing([]interface{}{"go"})
 
-    waitGroup.Wait()
+	waitGroup.Wait()
 }
