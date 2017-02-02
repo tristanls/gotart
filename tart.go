@@ -9,13 +9,13 @@ type Message []interface{}
 
 type Behavior func(*Context, Message) error
 
-type Create func(Behavior) Actor
+type Sponsor func(Behavior) Actor
 
 type Actor func(Message)
 
 type Context struct {
     Behavior Behavior
-    Create Create
+    Sponsor Sponsor
     Self Actor
 }
 
@@ -26,7 +26,7 @@ type Options struct {
     Fail func(error)
 }
 
-func Minimal(options *Options) Create {
+func Minimal(options *Options) Sponsor {
     var dispatch func(deliver)
     var fail func(error)
     var sponsor func(Behavior) Actor
@@ -56,7 +56,7 @@ func Minimal(options *Options) Create {
                 }
             })
         }
-        context = &Context{Behavior: behavior, Create: sponsor, Self: actor}
+        context = &Context{Behavior: behavior, Sponsor: sponsor, Self: actor}
         return actor
     }
     return sponsor
