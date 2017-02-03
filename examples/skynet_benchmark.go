@@ -28,7 +28,7 @@ func node(parent tart.Actor, numDescendants int) tart.Behavior {
 		for i := 0; i < div; i++ {
 			subNum := num + i*(size/div)
 			descendant := c.Sponsor(node(c.Self, div))
-			descendant([]interface{}{subNum, size/div, div})
+			descendant([]interface{}{subNum, size / div, div})
 		}
 		c.Behavior = accumulatorBeh
 		return nil
@@ -40,7 +40,7 @@ func main() {
 	var wg sync.WaitGroup
 	sponsor := tart.Minimal(nil)
 
-	size := 10000000
+	size := 1000000
 	div := 10
 
 	start := time.Now()
