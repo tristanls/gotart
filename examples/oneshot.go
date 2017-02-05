@@ -31,8 +31,8 @@ func main() {
 
 	waitGroup.Add(2)
 
-	oneShotActor([]interface{}{"first"})
-	oneShotActor([]interface{}{"second"})
+	oneShotActor("first")
+	oneShotActor("second")
 
 	waitGroup.Wait()
 }

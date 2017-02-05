@@ -4,8 +4,7 @@ import (
 	"sync"
 )
 
-// Message is a slice of data
-type Message []interface{}
+type Message interface{}
 
 type Behavior func(*Context, Message)
 

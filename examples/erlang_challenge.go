@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+type InitialMessage struct {
+	Int int
+	Actor tart.Actor
+}
+
 func main() {
 	var waitGroup sync.WaitGroup
 	M := 100000
@@ -54,11 +59,11 @@ func main() {
 	ringLast := func(endTime time.Time, first tart.Actor) tart.Behavior {
 		return func(context *tart.Context, message tart.Message) {
 			loopCompletionTimes = append(loopCompletionTimes, time.Now())
-			n := message[0].(int)
+			n := message.(int)
 			n -= 1
 			if n > 0 {
 				fmt.Printf(".")
-				first([]interface{}{n})
+				first(n)
 			} else {
 				context.Behavior = func(context *tart.Context, message tart.Message) {}
 				fmt.Printf(".")
@@ -77,10 +82,11 @@ func main() {
 				next(message)
 				context.Behavior = ringLink(next)
 			} else {
+				msg := message.(InitialMessage)
 				now := time.Now()
-				fmt.Printf("sending %v messages\n", message[0])
-				first := message[1].(tart.Actor)
-				first([]interface{}{message[0]})
+				fmt.Printf("sending %v messages\n", msg.Int)
+				first := msg.Actor
+				first(msg.Int)
 				context.Behavior = ringLast(now, first)
 			}
 		}
@@ -90,6 +96,6 @@ func main() {
 	fmt.Printf("starting %v actor ring\n", M)
 	constructionStartTime = time.Now()
 	ring := sponsor(ringBuilder(M))
-	ring([]interface{}{N, ring})
+	ring(InitialMessage{Int: N, Actor: ring})
 	waitGroup.Wait()
 }

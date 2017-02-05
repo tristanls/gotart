@@ -20,7 +20,7 @@ func main() {
 
 	waitGroup.Add(1)
 
-	failing([]interface{}{"go"})
+	failing("go")
 
 	waitGroup.Wait()
 }
