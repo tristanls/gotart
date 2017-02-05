@@ -26,6 +26,8 @@ type Options struct {
 	Fail     func(error)
 }
 
+func Fail(_ error) {}
+
 func Dispatch(deliver deliver) {
 	go deliver()
 }
@@ -37,7 +39,7 @@ func Minimal(options *Options) Sponsor {
 	if options != nil && options.Fail != nil {
 		fail = options.Fail
 	} else {
-		fail = func(_ error) {}
+		fail = Fail
 	}
 	if options != nil && options.Dispatch != nil {
 		dispatch = options.Dispatch
