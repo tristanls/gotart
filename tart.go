@@ -53,10 +53,10 @@ func Minimal(options *Options) Sponsor {
 			dispatch(func() {
 				mutex.Lock()
 				defer func() {
-					mutex.Unlock()
 					if p := recover(); p != nil {
 						fail(p)
 					}
+					mutex.Unlock()
 				}()
 				context.Behavior(context, message)
 			})
