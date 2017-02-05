@@ -10,24 +10,21 @@ func main() {
 	var waitGroup sync.WaitGroup
 	sponsor := tart.Minimal(nil)
 
-	sinkBeh := func(context *tart.Context, message tart.Message) error {
+	sinkBeh := func(context *tart.Context, message tart.Message) {
 		fmt.Printf("%v sinkBehDone\n", message)
 		waitGroup.Done()
-		return nil
 	}
 
 	oneShot := func(destination tart.Actor) tart.Behavior {
-		return func(context *tart.Context, message tart.Message) error {
+		return func(context *tart.Context, message tart.Message) {
 			destination(message)
 			context.Behavior = sinkBeh
-			return nil
 		}
 	}
 
-	destination := sponsor(func(context *tart.Context, message tart.Message) error {
+	destination := sponsor(func(context *tart.Context, message tart.Message) {
 		fmt.Printf("%v destinationDone\n", message)
 		waitGroup.Done()
-		return nil
 	})
 
 	oneShotActor := sponsor(oneShot(destination))

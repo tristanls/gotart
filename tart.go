@@ -7,7 +7,7 @@ import (
 // Message is a slice of data
 type Message []interface{}
 
-type Behavior func(*Context, Message) error
+type Behavior func(*Context, Message)
 
 type Sponsor func(Behavior) Actor
 
@@ -23,10 +23,10 @@ type deliver func()
 
 type Options struct {
 	Dispatch func(deliver)
-	Fail     func(error)
+	Fail     func(interface{})
 }
 
-func Fail(_ error) {}
+func Fail(_ interface{}) {}
 
 func Dispatch(deliver deliver) {
 	go deliver()
@@ -34,7 +34,7 @@ func Dispatch(deliver deliver) {
 
 func Minimal(options *Options) Sponsor {
 	var dispatch func(deliver)
-	var fail func(error)
+	var fail func(interface{})
 	var sponsor func(Behavior) Actor
 	if options != nil && options.Fail != nil {
 		fail = options.Fail
@@ -53,11 +53,13 @@ func Minimal(options *Options) Sponsor {
 		actor = func(message Message) {
 			dispatch(func() {
 				mutex.Lock()
-				err := context.Behavior(context, message)
-				mutex.Unlock()
-				if err != nil {
-					fail(err)
-				}
+				defer func() {
+					mutex.Unlock()
+					if p := recover(); p != nil {
+						fail(p)
+					}
+				}()
+				context.Behavior(context, message)
 			})
 		}
 		context = &Context{Behavior: behavior, Sponsor: sponsor, Self: actor}

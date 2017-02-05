@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	tart "github.com/tristanls/gotart"
 	"sync"
@@ -9,14 +8,14 @@ import (
 
 func main() {
 	var waitGroup sync.WaitGroup
-	failHandler := func(err error) {
-		fmt.Printf("%v boom!\n", err)
+	failHandler := func(r interface{}) {
+		fmt.Printf("%v boom!\n", r)
 		waitGroup.Done()
 	}
 	sponsor := tart.Minimal(&tart.Options{Fail: failHandler})
 
-	failing := sponsor(func(context *tart.Context, message tart.Message) error {
-		return errors.New("boom!")
+	failing := sponsor(func(context *tart.Context, message tart.Message) {
+		panic("boom!")
 	})
 
 	waitGroup.Add(1)

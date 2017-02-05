@@ -46,14 +46,13 @@ func main() {
 	sponsor := tart.Minimal(nil)
 
 	ringLink := func(next tart.Actor) tart.Behavior {
-		return func(context *tart.Context, message tart.Message) error {
+		return func(context *tart.Context, message tart.Message) {
 			next(message)
-			return nil
 		}
 	}
 
 	ringLast := func(endTime time.Time, first tart.Actor) tart.Behavior {
-		return func(context *tart.Context, message tart.Message) error {
+		return func(context *tart.Context, message tart.Message) {
 			loopCompletionTimes = append(loopCompletionTimes, time.Now())
 			n := message[0].(int)
 			n -= 1
@@ -61,20 +60,17 @@ func main() {
 				fmt.Printf(".")
 				first([]interface{}{n})
 			} else {
-				context.Behavior = func(context *tart.Context, message tart.Message) error {
-					return nil
-				}
+				context.Behavior = func(context *tart.Context, message tart.Message) {}
 				fmt.Printf(".")
 				constructionEndTime = endTime
 				reportProcessTimes()
 			}
-			return nil
 		}
 	}
 
 	var ringBuilder func(int) tart.Behavior
 	ringBuilder = func(m int) tart.Behavior {
-		return func(context *tart.Context, message tart.Message) error {
+		return func(context *tart.Context, message tart.Message) {
 			m -= 1
 			if m > 0 {
 				next := context.Sponsor(ringBuilder(m))
@@ -87,7 +83,6 @@ func main() {
 				first([]interface{}{message[0]})
 				context.Behavior = ringLast(now, first)
 			}
-			return nil
 		}
 	}
 
