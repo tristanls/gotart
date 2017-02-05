@@ -26,6 +26,10 @@ type Options struct {
 	Fail     func(error)
 }
 
+func Dispatch(deliver deliver) {
+	go deliver()
+}
+
 func Minimal(options *Options) Sponsor {
 	var dispatch func(deliver)
 	var fail func(error)
@@ -38,9 +42,7 @@ func Minimal(options *Options) Sponsor {
 	if options != nil && options.Dispatch != nil {
 		dispatch = options.Dispatch
 	} else {
-		dispatch = func(deliver deliver) {
-			go deliver()
-		}
+		dispatch = Dispatch
 	}
 	sponsor = func(behavior Behavior) Actor {
 		var actor Actor
