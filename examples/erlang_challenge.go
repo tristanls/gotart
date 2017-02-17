@@ -48,7 +48,7 @@ func main() {
 		waitGroup.Done()
 	}
 
-	sponsor := tart.Minimal(nil)
+	sponsor, _ := tart.Minimal(nil)
 
 	ringLink := func(next tart.Actor) tart.Behavior {
 		return func(context *tart.Context, message tart.Message) {
@@ -65,7 +65,7 @@ func main() {
 				fmt.Printf(".")
 				first(n)
 			} else {
-				context.Behavior = func(context *tart.Context, message tart.Message) {}
+				context.Become(func(context *tart.Context, message tart.Message) {})
 				fmt.Printf(".")
 				constructionEndTime = endTime
 				reportProcessTimes()
@@ -80,14 +80,14 @@ func main() {
 			if m > 0 {
 				next := context.Sponsor(ringBuilder(m))
 				next(message)
-				context.Behavior = ringLink(next)
+				context.Become(ringLink(next))
 			} else {
 				msg := message.(InitialMessage)
 				now := time.Now()
 				fmt.Printf("sending %v messages\n", msg.Int)
 				first := msg.Actor
 				first(msg.Int)
-				context.Behavior = ringLast(now, first)
+				context.Become(ringLast(now, first))
 			}
 		}
 	}

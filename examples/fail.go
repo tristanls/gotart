@@ -12,7 +12,7 @@ func main() {
 		fmt.Printf("%v boom!\n", r)
 		waitGroup.Done()
 	}
-	sponsor := tart.Minimal(&tart.Options{Fail: failHandler})
+	sponsor, _ := tart.Minimal(&tart.Options{Fail: failHandler})
 
 	failing := sponsor(func(context *tart.Context, message tart.Message) {
 		panic("boom!")

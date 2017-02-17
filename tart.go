@@ -18,8 +18,10 @@ type Actor func(Message)
 
 // Actor execution context.
 type Context struct {
-	// Actor behavior. Setting behavior changes how next message is handled.
-	Behavior Behavior
+	// Become changes how the actor will handle the next message it receives.
+	Become func(Behavior)
+	// Actor behavior.
+	behavior Behavior
 	// Capability to Sponsor (create) new Actors.
 	Sponsor Sponsor
 	// Capability to send messages to Self.
@@ -45,10 +47,11 @@ func Dispatch(deliver deliver) {
 }
 
 // Creates a Sponsor capability to create new actors with.
-func Minimal(options *Options) Sponsor {
+func Minimal(options *Options) (Sponsor, Sponsor) {
 	var dispatch func(deliver)
 	var fail func(interface{})
 	var sponsor func(Behavior) Actor
+	var sponsorNonSerial func(Behavior) Actor
 	if options != nil && options.Fail != nil {
 		fail = options.Fail
 	} else {
@@ -72,11 +75,30 @@ func Minimal(options *Options) Sponsor {
 					}
 					mutex.Unlock()
 				}()
-				context.Behavior(context, message)
+				context.behavior(context, message)
 			})
 		}
-		context = &Context{Behavior: behavior, Sponsor: sponsor, Self: actor}
+		become := func(behavior Behavior) {
+			context.behavior = behavior
+		}
+		context = &Context{Become: become, behavior: behavior, Sponsor: sponsor, Self: actor}
 		return actor
 	}
-	return sponsor
+	sponsorNonSerial = func(behavior Behavior) Actor {
+		var actor Actor
+		var context *Context
+		actor = func(message Message) {
+			dispatch(func() {
+				defer func() {
+					if p := recover(); p != nil {
+						fail(p)
+					}
+				}()
+				context.behavior(context, message)
+			})
+		}
+		context = &Context{behavior: behavior, Sponsor: sponsor, Self: actor}
+		return actor
+	}
+	return sponsor, sponsorNonSerial
 }
