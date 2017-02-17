@@ -10,20 +10,37 @@ type Message interface{}
 // Behavior is a function executed by an Actor on receipt of a Message.
 type Behavior func(*Context, Message)
 
+// NonSerialBehavior is a function executed by a non-serial Actor on receipt of a Message.
+type NonSerialBehavior func(*NonSerialContext, Message)
+
 // Sponsor is a capability to create a new Actor with specified Behavior.
 type Sponsor func(Behavior) Actor
+
+// NonSerialSponsor is a capability to create a new non-serial Actor with specified NonSerialBehavior.
+type NonSerialSponsor func(NonSerialBehavior) Actor
 
 // Actor type is a capability to send a message to the Actor.
 type Actor func(Message)
 
 // Actor execution context.
 type Context struct {
-	// Become changes how the actor will handle the next message it receives.
-	Become func(Behavior)
-	// Actor behavior.
-	behavior Behavior
+	// Actor behavior. Setting Behavior will change how the actor handles the next message it receives.
+	Behavior Behavior
 	// Capability to Sponsor (create) new Actors.
 	Sponsor Sponsor
+	// Capability to Sponsor (create) new non-Serial Actors.
+	SponsorNonSerial NonSerialSponsor
+	// Capability to send messages to Self.
+	Self Actor
+}
+
+type NonSerialContext struct {
+	// Actor non-serial behavior
+	behavior NonSerialBehavior
+	// Capability to Sponsor (create) new Actors.
+	Sponsor Sponsor
+	// Capability to Sponsor (create) new non-Serial Actors.
+	SponsorNonSerial NonSerialSponsor
 	// Capability to send messages to Self.
 	Self Actor
 }
@@ -47,11 +64,11 @@ func Dispatch(deliver deliver) {
 }
 
 // Creates a Sponsor capability to create new actors with.
-func Minimal(options *Options) (Sponsor, Sponsor) {
+func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 	var dispatch func(deliver)
 	var fail func(interface{})
 	var sponsor func(Behavior) Actor
-	var sponsorNonSerial func(Behavior) Actor
+	var sponsorNonSerial func(NonSerialBehavior) Actor
 	if options != nil && options.Fail != nil {
 		fail = options.Fail
 	} else {
@@ -75,18 +92,15 @@ func Minimal(options *Options) (Sponsor, Sponsor) {
 					}
 					mutex.Unlock()
 				}()
-				context.behavior(context, message)
+				context.Behavior(context, message)
 			})
 		}
-		become := func(behavior Behavior) {
-			context.behavior = behavior
-		}
-		context = &Context{Become: become, behavior: behavior, Sponsor: sponsor, Self: actor}
+		context = &Context{Behavior: behavior, Sponsor: sponsor, SponsorNonSerial: sponsorNonSerial, Self: actor}
 		return actor
 	}
-	sponsorNonSerial = func(behavior Behavior) Actor {
+	sponsorNonSerial = func(behavior NonSerialBehavior) Actor {
 		var actor Actor
-		var context *Context
+		var context *NonSerialContext
 		actor = func(message Message) {
 			dispatch(func() {
 				defer func() {
@@ -97,7 +111,7 @@ func Minimal(options *Options) (Sponsor, Sponsor) {
 				context.behavior(context, message)
 			})
 		}
-		context = &Context{behavior: behavior, Sponsor: sponsor, Self: actor}
+		context = &NonSerialContext{behavior: behavior, Sponsor: sponsor, SponsorNonSerial: sponsorNonSerial, Self: actor}
 		return actor
 	}
 	return sponsor, sponsorNonSerial

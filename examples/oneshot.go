@@ -18,7 +18,7 @@ func main() {
 	oneShot := func(destination tart.Actor) tart.Behavior {
 		return func(context *tart.Context, message tart.Message) {
 			destination(message)
-			context.Become(sinkBeh)
+			context.Behavior = sinkBeh
 		}
 	}
 

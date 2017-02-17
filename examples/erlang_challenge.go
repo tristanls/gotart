@@ -8,7 +8,7 @@ import (
 )
 
 type InitialMessage struct {
-	Int int
+	Int   int
 	Actor tart.Actor
 }
 
@@ -65,7 +65,7 @@ func main() {
 				fmt.Printf(".")
 				first(n)
 			} else {
-				context.Become(func(context *tart.Context, message tart.Message) {})
+				context.Behavior = func(context *tart.Context, message tart.Message) {}
 				fmt.Printf(".")
 				constructionEndTime = endTime
 				reportProcessTimes()
@@ -80,14 +80,14 @@ func main() {
 			if m > 0 {
 				next := context.Sponsor(ringBuilder(m))
 				next(message)
-				context.Become(ringLink(next))
+				context.Behavior = ringLink(next)
 			} else {
 				msg := message.(InitialMessage)
 				now := time.Now()
 				fmt.Printf("sending %v messages\n", msg.Int)
 				first := msg.Actor
 				first(msg.Int)
-				context.Become(ringLast(now, first))
+				context.Behavior = ringLast(now, first)
 			}
 		}
 	}

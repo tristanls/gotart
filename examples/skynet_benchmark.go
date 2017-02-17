@@ -8,9 +8,9 @@ import (
 )
 
 type Message struct {
-	Num int
+	Num  int
 	Size int
-	Div int
+	Div  int
 }
 
 func node(parent tart.Actor, numDescendants int) tart.Behavior {
@@ -36,7 +36,7 @@ func node(parent tart.Actor, numDescendants int) tart.Behavior {
 			descendant := c.Sponsor(node(c.Self, div))
 			descendant(Message{Num: subNum, Size: size / div, Div: div})
 		}
-		c.Become(accumulatorBeh)
+		c.Behavior = accumulatorBeh
 	}
 	return initialBeh
 }
