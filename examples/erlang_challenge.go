@@ -50,8 +50,8 @@ func main() {
 
 	sponsor, _ := tart.Minimal(nil)
 
-	ringLink := func(next tart.Actor) tart.Behavior {
-		return func(context *tart.Context, message tart.Message) {
+	ringLink := func(next tart.Actor) tart.NonSerialBehavior {
+		return func(context *tart.NonSerialContext, message tart.Message) {
 			next(message)
 		}
 	}
@@ -65,7 +65,7 @@ func main() {
 				fmt.Printf(".")
 				first(n)
 			} else {
-				context.Behavior = func(context *tart.Context, message tart.Message) {}
+				context.BecomeNonSerial(func(context *tart.NonSerialContext, message tart.Message) {})
 				fmt.Printf(".")
 				constructionEndTime = endTime
 				reportProcessTimes()
@@ -80,7 +80,7 @@ func main() {
 			if m > 0 {
 				next := context.Sponsor(ringBuilder(m))
 				next(message)
-				context.Behavior = ringLink(next)
+				context.BecomeNonSerial(ringLink(next))
 			} else {
 				msg := message.(InitialMessage)
 				now := time.Now()

@@ -10,7 +10,7 @@ func main() {
 	var waitGroup sync.WaitGroup
 	sponsor, _ := tart.Minimal(nil)
 
-	sinkBeh := func(context *tart.Context, message tart.Message) {
+	sinkBeh := func(context *tart.NonSerialContext, message tart.Message) {
 		fmt.Printf("%v sinkBehDone\n", message)
 		waitGroup.Done()
 	}
@@ -18,7 +18,7 @@ func main() {
 	oneShot := func(destination tart.Actor) tart.Behavior {
 		return func(context *tart.Context, message tart.Message) {
 			destination(message)
-			context.Behavior = sinkBeh
+			context.BecomeNonSerial(sinkBeh)
 		}
 	}
 

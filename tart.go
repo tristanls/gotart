@@ -24,8 +24,14 @@ type Actor func(Message)
 
 // Actor execution context.
 type Context struct {
+	// Become a non-Serial Actor with corresponding NonSerialBehavior.
+	BecomeNonSerial func(NonSerialBehavior)
 	// Actor behavior. Setting Behavior will change how the actor handles the next message it receives.
 	Behavior Behavior
+	// Reference to NonSerialContext if actor becomes a non-Serial Actor.
+	nonSerialContext *NonSerialContext
+	// Relay function to the deliver function implementation called when sending message to this Actor.
+	relay relay
 	// Capability to Sponsor (create) new Actors.
 	Sponsor Sponsor
 	// Capability to Sponsor (create) new non-Serial Actors.
@@ -46,6 +52,8 @@ type NonSerialContext struct {
 }
 
 type deliver func()
+
+type relay func(Message)
 
 // Options for Minimal implementation.
 type Options struct {
@@ -82,8 +90,9 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 	sponsor = func(behavior Behavior) Actor {
 		var actor Actor
 		var context *Context
+		var relay relay
 		mutex := &sync.Mutex{} // required for serial actors only
-		actor = func(message Message) {
+		relay = func(message Message) {
 			dispatch(func() {
 				mutex.Lock()
 				defer func() {
@@ -95,7 +104,23 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 				context.Behavior(context, message)
 			})
 		}
-		context = &Context{Behavior: behavior, Sponsor: sponsor, SponsorNonSerial: sponsorNonSerial, Self: actor}
+		actor = func(message Message) {
+			context.relay(message)
+		}
+		becomeNonSerial := func(nonSerialBehavior NonSerialBehavior) {
+			nonSerialContex := &NonSerialContext{behavior: nonSerialBehavior, Sponsor: sponsor, SponsorNonSerial: sponsorNonSerial, Self: actor}
+			context.relay = func(message Message) {
+				dispatch(func() {
+					defer func() {
+						if p := recover(); p != nil {
+							fail(p)
+						}
+					}()
+					nonSerialContex.behavior(nonSerialContex, message)
+				})
+			}
+		}
+		context = &Context{BecomeNonSerial: becomeNonSerial, Behavior: behavior, relay: relay, Sponsor: sponsor, SponsorNonSerial: sponsorNonSerial, Self: actor}
 		return actor
 	}
 	sponsorNonSerial = func(behavior NonSerialBehavior) Actor {
