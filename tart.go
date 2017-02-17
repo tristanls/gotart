@@ -53,6 +53,7 @@ type NonSerialContext struct {
 
 type deliver func()
 
+// Relay function to the deliver function
 type relay func(Message)
 
 // Options for Minimal implementation.
@@ -108,7 +109,7 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 			context.relay(message)
 		}
 		becomeNonSerial := func(nonSerialBehavior NonSerialBehavior) {
-			nonSerialContex := &NonSerialContext{behavior: nonSerialBehavior, Sponsor: sponsor, SponsorNonSerial: sponsorNonSerial, Self: actor}
+			nonSerialContext := &NonSerialContext{behavior: nonSerialBehavior, Sponsor: sponsor, SponsorNonSerial: sponsorNonSerial, Self: actor}
 			context.relay = func(message Message) {
 				dispatch(func() {
 					defer func() {
@@ -116,7 +117,7 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 							fail(p)
 						}
 					}()
-					nonSerialContex.behavior(nonSerialContex, message)
+					nonSerialContext.behavior(nonSerialContext, message)
 				})
 			}
 		}
