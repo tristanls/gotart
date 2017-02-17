@@ -28,8 +28,6 @@ type Context struct {
 	BecomeNonSerial func(NonSerialBehavior)
 	// Actor behavior. Setting Behavior will change how the actor handles the next message it receives.
 	Behavior Behavior
-	// Reference to NonSerialContext if actor becomes a non-Serial Actor.
-	nonSerialContext *NonSerialContext
 	// Relay function to the deliver function implementation called when sending message to this Actor.
 	relay relay
 	// Capability to Sponsor (create) new Actors.
