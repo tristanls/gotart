@@ -84,11 +84,9 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 		dispatch = Dispatch
 	}
 	sponsor = func(behavior Behavior) Actor {
-		var actor Actor
 		var context *Context
-		var relay func(Message)
 		mutex := &sync.Mutex{} // required for serial actors only
-		relay = func(message Message) {
+		relay := func(message Message) {
 			dispatch(func() {
 				mutex.Lock()
 				defer func() {
@@ -100,7 +98,7 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 				context.Behavior(context, message)
 			})
 		}
-		actor = func(message Message) {
+		actor := func(message Message) {
 			context.relay(message)
 		}
 		becomeNonSerial := func(nonSerialBehavior NonSerialBehavior) {
@@ -110,9 +108,8 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 		return actor
 	}
 	sponsorNonSerial = func(behavior NonSerialBehavior) Actor {
-		var actor Actor
 		var context *NonSerialContext
-		actor = func(message Message) {
+		actor := func(message Message) {
 			dispatch(func() {
 				defer func() {
 					if p := recover(); p != nil {
