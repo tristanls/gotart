@@ -60,23 +60,35 @@ func Minimal(options *Options) Sponsor {
 		dispatch = Dispatch
 	}
 	sponsor = func(behavior Behavior) Actor {
-		var actor Actor
+		var capability Actor
 		var context *Context
 		mutex := &sync.Mutex{} // required for serial actors only
-		actor = func(message Message) {
+		messages := make(chan Message)
+		capability = func(message Message) {
 			dispatch(func() {
-				mutex.Lock()
-				defer func() {
-					if p := recover(); p != nil {
-						fail(p)
-					}
-					mutex.Unlock()
-				}()
-				context.Behavior(context, message)
+				messages<- message
 			})
 		}
-		context = &Context{Behavior: behavior, Sponsor: sponsor, Self: actor}
-		return actor
+		actor := func(msg Message) {
+			mutex.Lock()
+			defer func() {
+				if p := recover(); p != nil {
+					fail(p)
+				}
+				mutex.Unlock()
+			}()
+			context.Behavior(context, msg)
+		}
+		go func() {
+			for {
+				select {
+				case msg := <-messages:
+					actor(msg)
+				}
+			}
+		}()
+		context = &Context{Behavior: behavior, Sponsor: sponsor, Self: capability}
+		return capability
 	}
 	return sponsor
 }
