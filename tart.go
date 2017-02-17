@@ -29,7 +29,7 @@ type Context struct {
 	// Actor behavior. Setting Behavior will change how the actor handles the next message it receives.
 	Behavior Behavior
 	// Relay function to the deliver function implementation called when sending message to this Actor.
-	relay relay
+	relay func(Message)
 	// Capability to Sponsor (create) new Actors.
 	Sponsor Sponsor
 	// Capability to Sponsor (create) new non-Serial Actors.
@@ -50,9 +50,6 @@ type NonSerialContext struct {
 }
 
 type deliver func()
-
-// Relay function to the deliver function
-type relay func(Message)
 
 // Options for Minimal implementation.
 type Options struct {
@@ -89,7 +86,7 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 	sponsor = func(behavior Behavior) Actor {
 		var actor Actor
 		var context *Context
-		var relay relay
+		var relay func(Message)
 		mutex := &sync.Mutex{} // required for serial actors only
 		relay = func(message Message) {
 			dispatch(func() {
@@ -107,17 +104,7 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 			context.relay(message)
 		}
 		becomeNonSerial := func(nonSerialBehavior NonSerialBehavior) {
-			nonSerialContext := &NonSerialContext{behavior: nonSerialBehavior, Sponsor: sponsor, SponsorNonSerial: sponsorNonSerial, Self: actor}
-			context.relay = func(message Message) {
-				dispatch(func() {
-					defer func() {
-						if p := recover(); p != nil {
-							fail(p)
-						}
-					}()
-					nonSerialContext.behavior(nonSerialContext, message)
-				})
-			}
+			context.relay = context.SponsorNonSerial(nonSerialBehavior)
 		}
 		context = &Context{BecomeNonSerial: becomeNonSerial, Behavior: behavior, relay: relay, Sponsor: sponsor, SponsorNonSerial: sponsorNonSerial, Self: actor}
 		return actor
