@@ -4,33 +4,47 @@ import (
 	"sync"
 )
 
+// Message can be anything.
 type Message interface{}
 
+// Behavior is a function executed by an Actor on receipt of a Message.
 type Behavior func(*Context, Message)
 
+// Sponsor is a capability to create a new Actor with specified Behavior.
 type Sponsor func(Behavior) Actor
 
+// Actor type is a capability to send a message to the Actor.
 type Actor func(Message)
 
+// Actor execution context.
 type Context struct {
+	// Actor behavior. Setting behavior changes how next message is handled.
 	Behavior Behavior
-	Sponsor  Sponsor
-	Self     Actor
+	// Capability to Sponsor (create) new Actors.
+	Sponsor Sponsor
+	// Capability to send messages to Self.
+	Self Actor
 }
 
 type deliver func()
 
+// Options for Minimal implementation.
 type Options struct {
+	// Non-default message dispatch function to use.
 	Dispatch func(deliver)
-	Fail     func(interface{})
+	// Non-default actor behavior panic recovery to use.
+	Fail func(interface{})
 }
 
+// Default actor behavior panic recovery.
 func Fail(_ interface{}) {}
 
+// Default message dispatch function.
 func Dispatch(deliver deliver) {
 	go deliver()
 }
 
+// Creates a Sponsor capability to create new actors with.
 func Minimal(options *Options) Sponsor {
 	var dispatch func(deliver)
 	var fail func(interface{})
