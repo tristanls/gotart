@@ -36,6 +36,8 @@ type Context struct {
 	SponsorNonSerial NonSerialSponsor
 	// Capability to send messages to Self.
 	Self Actor
+	// Mutex for updating context. Required for Serial Actors only.
+	mutex sync.Mutex
 }
 
 type NonSerialContext struct {
@@ -85,15 +87,14 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 	}
 	sponsor = func(behavior Behavior) Actor {
 		var context *Context
-		mutex := &sync.Mutex{} // required for serial actors only
 		relay := func(message Message) {
 			dispatch(func() {
-				mutex.Lock()
+				context.mutex.Lock()
 				defer func() {
 					if p := recover(); p != nil {
 						fail(p)
 					}
-					mutex.Unlock()
+					context.mutex.Unlock()
 				}()
 				context.Behavior(context, message)
 			})
