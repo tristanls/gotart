@@ -38,6 +38,8 @@ type Context struct {
 	Self Actor
 	// Mutex for updating context. Required for Serial Actors only.
 	mutex sync.Mutex
+	// Flag used for correct transition into NonSerialContext.
+	isNonSerial bool
 }
 
 type NonSerialContext struct {
@@ -89,6 +91,9 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 		var context *Context
 		relay := func(message Message) {
 			dispatch(func() {
+				// When messages are sent from serial Actor, they wait for the context.mutext.Lock() here.
+				// While waiting, the Actor may have become non-Serial and started using the NonSerialContext
+				// instead. Hence the check of the context.isNonSerial flag below.
 				context.mutex.Lock()
 				defer func() {
 					if p := recover(); p != nil {
@@ -96,7 +101,13 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 					}
 					context.mutex.Unlock()
 				}()
-				context.Behavior(context, message)
+				if context.isNonSerial {
+					// We've become a non-Serial Actor, but we're about to execute in Serial Context. Relay the
+					// message to NonSerialContext.
+					context.relay(message)
+				} else {
+					context.Behavior(context, message)
+				}
 			})
 		}
 		actor := func(message Message) {
@@ -104,6 +115,7 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 		}
 		becomeNonSerial := func(nonSerialBehavior NonSerialBehavior) {
 			context.relay = context.SponsorNonSerial(nonSerialBehavior)
+			context.isNonSerial = true
 		}
 		context = &Context{BecomeNonSerial: becomeNonSerial, Behavior: behavior, relay: relay, Sponsor: sponsor, SponsorNonSerial: sponsorNonSerial, Self: actor}
 		return actor
