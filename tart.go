@@ -91,7 +91,7 @@ func Minimal(options *Options) (Sponsor, NonSerialSponsor) {
 		var context *Context
 		relay := func(message Message) {
 			dispatch(func() {
-				// When messages are sent from serial Actor, they wait for the context.mutext.Lock() here.
+				// When messages are sent to serial Actor, they wait for the context.mutext.Lock() here.
 				// While waiting, the Actor may have become non-Serial and started using the NonSerialContext
 				// instead. Hence the check of the context.isNonSerial flag below.
 				context.mutex.Lock()
